@@ -8,9 +8,11 @@ from Tootip import Tooltip
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import *
+from PIL import Image, ImageTk
 import tkinter
 import json
 import tkinter
+import tkmacosx
 import tkinter.font
 import tkinter.ttk
 from urllib import request
@@ -60,11 +62,8 @@ def create_gui():
     # window.geometry("800x710-2500+700")
     # window.resizable(False, False)
 
-    window.iconbitmap(resource_path('resource\\logo.ico'))
-    # window.iconphoto(False, tk.PhotoImage(file=resource_path('resource\\아멜리.jpg')))
-
-    # 상단 메뉴 추가
-    menubar = tkinter.Menu(window)
+    window.iconbitmap(resource_path(os.path.join('resource', 'logo.ico')))
+    # window.iconphoto(False, tk.PhotoImage(file=resource_path(os.path.join('resource', '아멜리.jpg'))))
 
     # 초기화 메뉴 클릭
     def click_clear_menu(menu):
@@ -83,25 +82,31 @@ def create_gui():
 
         display_right_units()  # 화면 갱신
 
-    menubar.add_cascade(label="새 게임", command=partial(click_clear_menu, 'new game'))
-    menubar.add_cascade(label="선택 초기화", command=partial(click_clear_menu, 'clear'))
+    # 상단 메뉴 추가
+    menubar = tkinter.Menu(window)
+    appmenu = Menu(menubar, name='apple')
+    menubar.add_cascade(menu=appmenu)
+    appmenu.add_command(label="새 게임", command=partial(click_clear_menu, 'new game'))
+    appmenu.add_command(label="선택 초기화", command=partial(click_clear_menu, 'clear'))
     window.config(menu=menubar)
+
+    window.option_add('*tearOff', FALSE)
 
     # 이미지 정보는 변수를 유지하지 않으면 사라진다. 그러니 미리 불러오기
     symbol_images = {}
     for s in Symbols:
-        img_path = f'resource\\symbols\\{s.value}.png'
-        symbol_images[s] = PhotoImage(file=resource_path(img_path))
+        img_path = os.path.join('resource', 'symbols', f'{s.value}.png')
+        symbol_images[s] = ImageTk.PhotoImage(Image.open(resource_path(img_path)).convert('RGB'))
 
     # 이미지 정보는 변수를 유지하지 않으면 사라진다. 그러니 미리 불러오기
     unit_images = {}
     unit_list = Units.get_unit_list()
     for unit in unit_list:
-        img_path = f'resource\\units\\{unit[0]}.png'
+        img_path = os.path.join('resource', 'units', f'{unit[0]}.png')
 
         # Resizing image to fit on button
         # photoimage = PhotoImage(file=img_path).subsample(2, 2)
-        unit_images[unit[0]] = PhotoImage(file=resource_path(img_path))
+        unit_images[unit[0]] = ImageTk.PhotoImage(Image.open(resource_path(img_path)).convert('RGB'))
 
 
     upper_frame = tkinter.Frame(window)
@@ -109,7 +114,7 @@ def create_gui():
 
     # 심볼 목록 표시
     symbol_list_frame = tkinter.LabelFrame(upper_frame, text="심볼 선택")
-    symbol_list_frame.pack(side='left', fill="both", padx=10, pady=10)
+    symbol_list_frame.pack(side='left', fill="both", padx=4, pady=4)
 
     # 심볼 표시
     symbol_list_window = tk.Text(symbol_list_frame, wrap="word", width='100', height='15', bg='SystemButtonFace', yscrollcommand=lambda *args: symbol_vsb.set(*args))
@@ -163,7 +168,7 @@ def create_gui():
         random_unit_selected_symbols[name] = [symbol_1, symbol_2]
 
         create_menu(symbol_2, name)
-        te.pack(side="top", padx=10, pady=10)
+        te.pack(side="top", padx=4, pady=4)
 
     add_random_unit(random_unit_select_symbol, '궁정 화가 지르콘')
     add_random_unit(random_unit_select_symbol, '점성술사 래브라')
@@ -189,8 +194,7 @@ def create_gui():
     # 심볼 목록 표시
     def display_symbols():
         for s in Symbols:
-            tag_new_btn = tkinter.Button(symbol_list_frame, overrelief="groove", image=symbol_images[s], text=s.value,
-                                         command=partial(symbol_click, s))
+            tag_new_btn = tkmacosx.Button(symbol_list_frame, height=56, width=56, overrelief="groove", image=symbol_images[s], command=partial(symbol_click, s))
 
             Tooltip(tag_new_btn, text=s.value)
 
@@ -199,14 +203,14 @@ def create_gui():
 
             # text 위젯에 추가
             symbol_list_window.configure(state="normal")
-            symbol_list_window.window_create("insert", window=tag_new_btn, padx=10, pady=10)
+            symbol_list_window.window_create("insert", window=tag_new_btn, padx=4, pady=4)
             symbol_list_window.configure(state="disabled")
 
     display_symbols()
 
     # 유닛 목록을 표시할 윈도우 생성
     unit_list_frame = tkinter.LabelFrame(window, text="선택된 심볼의 유닛 목록")
-    unit_list_frame.pack(side='top', fill="both", padx=10, pady=10)
+    unit_list_frame.pack(side='top', fill="both", padx=4, pady=4)
 
     unit_list_window = tk.Text(unit_list_frame, wrap="word", height='40',
                                bg='SystemButtonFace', yscrollcommand=lambda *args: unit_vsb.set(*args))
@@ -230,9 +234,9 @@ def create_gui():
                 if unit[1] == Level.bronze:
                     color = '#CD7F32'
                 elif unit[1] == Level.silver:
-                    color = 'silver'
+                    color = '#C0C0C0'
                 elif unit[1] == Level.gold:
-                    color = 'gold'
+                    color = '#FFD700'
 
                 # 전체 프레임
                 unit_frame = tkinter.Frame(unit_list_frame,  bg=color) #, command=partial(unit_click, s)
@@ -264,7 +268,7 @@ def create_gui():
 
                 # text 위젯에 추가
                 unit_list_window.configure(state="normal")
-                unit_list_window.window_create("insert", window=unit_frame, padx=10, pady=10)
+                unit_list_window.window_create("insert", window=unit_frame, padx=4, pady=4)
                 unit_list_window.configure(state="disabled")
 
 
@@ -294,13 +298,13 @@ def test():
     def add_widget():
         global COUNT
         # COUNT += 1
-        widget = tk.Button(root, width=12, text=f"Widget #{COUNT}", bd=1, relief="raised", command=event,
+        widget = tkmacosx.Button(root, width=12, text=f"Widget #{COUNT}", bd=1, relief="raised", command=event,
                           bg="#5C9BD5", foreground="white", padx=4, pady=4)
         text.configure(state="normal")
-        text.window_create("insert", window=widget, padx=10, pady=10)
+        text.window_create("insert", window=widget, padx=4, pady=4)
         text.configure(state="disabled")
 
-    add_button = tk.Button(toolbar, command=add_widget, text="Add")
+    add_button = tkmacosx.Button(toolbar, command=add_widget, text="Add")
     add_button.pack(side="left")
 
     for i in range(9):
